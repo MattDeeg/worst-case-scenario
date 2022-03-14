@@ -1,0 +1,19 @@
+{
+	"indexes": [
+		{
+			"collectionGroup": "predicaments",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "pack",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "seed",
+					"order": "ASCENDING"
+				}
+			]
+		}
+	],
+	"fieldOverrides": []
+}

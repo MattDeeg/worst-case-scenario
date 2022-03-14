@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /meta/packs {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /predicaments/{predicament} {
+      allow read: if true;
+      allow write: if false;
+
+      // text: string
+      // seed: number
+      // cardPack: string?
+    }
+
+    match /gameMeta/{game} {
+      allow read, write: if false;
+      // users:
+      //   tokens: number[];
+      //   lastVictimAt?: number;
+      //   active: boolean;
+    }
+
+    match /gameVictim/{game} {
+      allow read: if true;
+      allow write: if false;
+
+      // cards: Card[];
+      // readyToReveal: boolean;
+    }
+
+    match /games/{game} {
+      allow read: if true;
+      allow write: if false;
+
+      // type: casual | scored
+      // cards: Card[];
+      // victim: string;
+      // round: number;
+      // bonusType: number;
+      // users: Record<string, ...
+      //   id: string;
+      //   host: boolean;
+      //   displayName: string;
+      //   color: string;
+      //   score: number;
+      // decision?:
+      //   cardID: string;
+      //   users: Record<string, string>
+    }
+  }
+}

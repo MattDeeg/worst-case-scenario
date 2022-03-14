@@ -1,0 +1,13 @@
+.bottomBar {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	display: flex;
+	justify-content: space-around;
+	padding: 2em 1em 0.5em;
+	background: linear-gradient(transparent 0, var(--page-bg) 1.5em);
+	.header {
+		margin: 0;
+		color: var(--page-text);
+	}
+}
