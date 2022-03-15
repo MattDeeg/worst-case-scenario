@@ -1,7 +1,7 @@
-import { v4 as uuid } from 'uuid';
 import cookie from 'cookie';
 import type { GetSession, Handle } from '@sveltejs/kit';
-import { store } from '$lib/firebase/server';
+import { store, database } from '$lib/firebase/server';
+import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
 
 export const getSession: GetSession = (event) => {
 	const userID = event.locals.userID;
@@ -13,10 +13,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const cookieHeaders = event.request.headers.get('cookie') || '';
 	const cookies = cookie.parse(cookieHeaders);
 
-	const userID = cookies.userID || uuid();
-	event.locals = { userID };
+	const userID = cookies.userID || store.generateID();
+	event.locals = { userID, database: wrapDatabase(database) };
 
-	const response = await resolve(event, { ssr: false });
+	const response = await resolve(event);
 	const expires = new Date(Date.now() + 3.154e10); // + 1 year
 	response.headers.append(
 		'set-cookie',

@@ -1,21 +1,17 @@
 <script lang="ts">
-	import { sortedUsers, type RunningGame } from '$lib/firebase/docTypes/Game';
 	import Spinner from './Spinner.svelte';
 
-	export let userID: string;
-	export let game: RunningGame;
+	import { getRoomContext } from '$lib/room/context';
 
-	$: users = sortedUsers(game, userID);
+	const { round, users, scores } = getRoomContext();
 </script>
 
 <div class="users">
-	{#if game.type === 'competitive'}
-		<Spinner target={game.bonusType} forceSpin={game.round} />
-	{/if}
-	{#each users as user (user.id)}
+	<Spinner target={$round?.bonusType} forceSpin={$round?.id} />
+	{#each $users as user (user.id)}
 		<div class="user" style="--user-color: {user.color}">
-			<span class="name">{user.displayName}</span>
-			<span class="score">{user.score}</span>
+			<span class="name">{user.name}</span>
+			<span class="score">{$scores[user.id]}</span>
 		</div>
 	{/each}
 </div>

@@ -1,5 +1,4 @@
-import type { GameType } from '$lib/firebase/docTypes/Game';
-import type { GameMeta } from '$lib/firebase/docTypes/GameMeta';
+import type { Round, TokenValue } from '$lib/firebase/dbTypes/Database';
 
 const baseScore = (correct: number[], guesses: number[]) => {
 	let score = 0;
@@ -71,34 +70,21 @@ const scoreYourChips = (correct: number[], guesses: number[]) => {
 	return score;
 };
 
-const scoreFunctions = [
-	baseScore,
-	theFourIsMore,
-	allIsBonus,
-	badIsGood,
-	scoreYourChips,
-	tripleUp,
-	doubleUp
-];
+const scoreFunctions = [theFourIsMore, allIsBonus, badIsGood, scoreYourChips, tripleUp, doubleUp];
 
-export const getBonusType = (type: GameType): number => {
-	if (type === 'casual') {
-		return 0;
-	} else {
-		return 1 + Math.floor(Math.random() * scoreFunctions.length - 2);
-	}
-};
+export const getBonusType = (): number => Math.floor(Math.random() * scoreFunctions.length - 1);
 
-export const scoreRound = (game: GameMeta): Record<string, number> => {
-	const victim = game.victim;
-	const entries = Object.entries(game.decisions);
-	const correctOrder = game.decisions[victim].tokens;
-	const scoreFunction = scoreFunctions[game.bonusType];
-
-	console.log(game.bonusType);
+export const scoreRound = (
+	round: Round,
+	tokens: Record<string, TokenValue[]>
+): Record<string, number> => {
+	const victim = round.victim;
+	const entries = Object.entries(tokens);
+	const correctOrder = tokens[victim];
+	const scoreFunction = scoreFunctions[round.bonusType];
 
 	const players = entries.filter(([key]) => key !== victim);
-	const scored: [string, number][] = players.map(([key, { tokens }]) => [
+	const scored: [string, number][] = players.map(([key, tokens]) => [
 		key,
 		scoreFunction(correctOrder, tokens)
 	]);

@@ -1,23 +1,15 @@
-import type { UserMeta } from '$lib/firebase/docTypes/GameMeta';
+type Acc = [string, number];
 
-type Acc = [string, { lastVictimAt: number; active: boolean }];
-
-export const nextVictim = (users: Record<string, UserMeta>): string => {
+export const nextVictim = (users: Record<string, number>): string => {
 	const entries = Object.entries(users);
-	const anyNonVictims = entries.filter(([, user]) => user && user.lastVictimAt == null);
+	const anyNonVictims = entries.filter(([, lastVictimAt]) => lastVictimAt === 0);
 	if (anyNonVictims.length > 0) {
 		const idx = Math.floor(Math.random() * anyNonVictims.length);
 		return anyNonVictims[idx][0];
 	}
 
-	return (entries as Acc[]).reduce(
-		(acc, entry) => {
-			const user = entry[1];
-			if (user.active && user.lastVictimAt < acc[1].lastVictimAt) {
-				return entry;
-			}
-			return acc;
-		},
-		['', { lastVictimAt: Infinity, active: true }] as Acc
-	)[0];
+	return (entries as Acc[]).reduce((acc, entry) => (entry[1] < acc[1] ? entry : acc), [
+		'',
+		Infinity
+	] as Acc)[0];
 };

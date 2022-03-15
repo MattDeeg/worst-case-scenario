@@ -1,60 +1,41 @@
 <script lang="ts">
-	import { sortedUsers, type Game } from '$lib/firebase/docTypes/Game';
 	import Surface from '$lib/ui/Surface.svelte';
 	import Token from '$lib/room/components/Token.svelte';
+	import { getRoomContext } from './context';
 
-	export let userID: string;
-	export let gameID: string;
-	export let game: Game;
+	const { api, gameID, userID, user, users, readiness } = getRoomContext();
 
-	$: isHost = game?.users?.[userID]?.host;
-	$: isReady = game?.users?.[userID]?.ready;
-	let userColor = game?.users?.[userID]?.color;
-	let userName = game?.users?.[userID]?.displayName;
-	$: allReady = Object.values(game.users).every((user) => user.ready);
+	$: isReady = $readiness?.[userID] ?? false;
+	let userColor = $user?.color;
+	let userName = $user?.name;
+	let allReady = false;
+	$: {
+		const userIDs = Object.keys($users);
+		const ready = $readiness;
+		allReady = userIDs.every((id) => ready[id] === true);
+	}
 
-	const readyUser = () => {
-		fetch('/api/readyUser', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json;charset=utf-8'
-			},
-			body: JSON.stringify({ gameID, color: userColor, displayName: userName, ready: !isReady })
-		})
-			.then((res) => res.json())
-			.then(console.log);
-	};
-	const startGame = () => {
-		fetch('/api/start', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json;charset=utf-8'
-			},
-			body: JSON.stringify({ gameID })
-		})
-			.then((res) => res.json())
-			.then(console.log);
-	};
+	const readyUser = () =>
+		api.readyUser({
+			color: userColor,
+			displayName: userName,
+			ready: !isReady
+		});
 
-	$: users = sortedUsers(game, userID);
+	const startGame = () => api.nextRound();
 </script>
 
 <Surface header="{gameID} Lobby" --min-height="75vh">
 	<div class="column g1">
-		{#each users as user (user.id)}
+		{#each $users as user (user.id)}
 			{@const isSelf = user.id === userID}
-			{@const isSelfUnready = isSelf && !user.ready}
+			{@const isSelfUnready = isSelf && !isReady}
 			<div class="row g2">
-				{#if user.host}
-					<img class="icon" src="/crown.svg" alt="user is host" />
-				{:else}
-					<span class="icon" />
-				{/if}
 				{#if isSelfUnready}
 					<input class="flex-auto" style="--spacing: 0" bind:value={userName} />
 				{:else}
 					<span class="flex-auto">
-						{user.displayName}
+						{user.name}
 					</span>
 				{/if}
 				<span class="colorSelect">
@@ -68,15 +49,13 @@
 					disabled={!isSelf}
 					on:click={readyUser}
 					class="inline-btn"
-					class:ready={user.ready}
+					class:ready={$readiness[user.id]}
 				>
 					Ready <i>✓</i>
 				</button>
 			</div>
 		{/each}
-		{#if isHost}
-			<button type="button" on:click={startGame} disabled={!allReady}>Start Game</button>
-		{/if}
+		<button type="button" on:click={startGame} disabled={!allReady}>Start Game</button>
 	</div>
 </Surface>
 
@@ -101,10 +80,6 @@
 	}
 	.row {
 		align-items: center;
-	}
-	.icon {
-		width: 2em;
-		min-height: 1em;
 	}
 	.colorSelect {
 		position: relative;

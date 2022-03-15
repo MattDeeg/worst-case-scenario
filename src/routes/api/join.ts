@@ -1,13 +1,14 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import type { User } from '$lib/firebase/docTypes/Game';
 import { getString } from '$lib/api/readFormData';
-import { nextColor } from '$lib/api/nextColor';
-import { getGame } from '$lib/api/refs';
+import { getColorFor } from '$lib/api/nextColor';
+import { database } from '$lib/firebase/server';
+import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
+import { asSuccess, refExists } from '$lib/utils';
 
 export const post: RequestHandler = async (event) => {
 	const formData = await event.request.formData();
 
-	const userID = event.locals.userID;
+	const { userID } = event.locals;
 	const gameID = getString(formData, 'gameID');
 	const displayName = getString(formData, 'displayName');
 
@@ -20,10 +21,19 @@ export const post: RequestHandler = async (event) => {
 		};
 	}
 
-	const gameRef = getGame(gameID);
-	const game = (await gameRef.get()).data();
+	const db = wrapDatabase(database);
+	const gameRef = db.games[gameID];
 
-	if (game.users[userID]) {
+	if (!(await refExists(gameRef.players.count))) {
+		return {
+			status: 302,
+			headers: {
+				location: '/?error=exists'
+			}
+		};
+	}
+
+	if (await refExists(gameRef.players.users[userID])) {
 		// already joined
 		return {
 			status: 302,
@@ -32,18 +42,18 @@ export const post: RequestHandler = async (event) => {
 			}
 		};
 	}
-	const newUser: User = {
-		id: userID,
-		host: false,
-		displayName,
-		color: nextColor(game),
-		score: 0,
-		ready: false
-	};
 
-	const success = await Promise.all([gameRef.update(`users.${userID}`, newUser)]).then(
-		() => true,
-		() => false
+	const success = await asSuccess(
+		gameRef.victims[userID].set(0),
+		gameRef.players.transaction((players) => {
+			const color = getColorFor(players.count);
+			players.count++;
+			players.users[userID] = {
+				color,
+				name: displayName
+			};
+			return players;
+		})
 	);
 
 	if (!success) {
@@ -55,7 +65,6 @@ export const post: RequestHandler = async (event) => {
 		};
 	}
 
-	// TODO redirect based on error handling
 	return {
 		status: 302,
 		headers: {

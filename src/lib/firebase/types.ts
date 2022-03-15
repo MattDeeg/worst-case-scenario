@@ -23,3 +23,8 @@ export const isLimit = (query: QueryClause): query is Limit => {
 export const isWhere = (query: QueryClause): query is Where => {
 	return (query as Where).op != null;
 };
+
+export interface DataSnapshot<T = unknown> {
+	exists(): boolean;
+	val(): T;
+}

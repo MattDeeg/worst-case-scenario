@@ -1,8 +1,8 @@
 <script lang="ts">
 	export let target = 0;
-	export let forceSpin: number;
+	export let forceSpin: string;
 
-	const noop = (n: number) => n;
+	const noop = (n: string) => n;
 
 	let angle = 0;
 	$: {

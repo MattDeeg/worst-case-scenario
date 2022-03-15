@@ -24,10 +24,20 @@ import {
 	Transaction,
 	DocumentReference
 } from 'firebase/firestore';
+import {
+	getDatabase,
+	ref,
+	set,
+	update,
+	onValue,
+	get,
+	runTransaction as dbTransaction,
+	type DatabaseReference
+} from 'firebase/database';
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { isLimit, isSortBy, isWhere, type QueryClause } from './types';
+import { isLimit, isSortBy, isWhere, type DataSnapshot, type QueryClause } from './types';
 
-const getComponent = (app: FirebaseApp) => {
+const getStoreComponent = (app: FirebaseApp) => {
 	const store = getFirestore(app);
 
 	return {
@@ -85,11 +95,30 @@ const getComponent = (app: FirebaseApp) => {
 	};
 };
 
+const getDatabaseComponent = (app: FirebaseApp) => {
+	const database = getDatabase(app);
+
+	type Callback = (snapshot: DataSnapshot) => unknown;
+
+	const ensureRef = (path: string): DatabaseReference => ref(database, path);
+
+	return {
+		get: (path: string): Promise<DataSnapshot> => get(ensureRef(path)),
+		set: (path: string, data: unknown): Promise<void> => set(ensureRef(path), data),
+		update: (path: string, values: object) => update(ensureRef(path), values),
+		onValue: (path: string, callback: Callback) => onValue(ensureRef(path), callback),
+		transaction: <T>(path: string, callback: (current: T) => T): Promise<void> =>
+			dbTransaction(ensureRef(path), callback).then(() => null)
+	};
+};
+
 const configStr = import.meta.env.VITE_FIREBASE_CLIENT_CONFIG as string;
 const config = JSON.parse(configStr);
 
 const existing = getApps()[0];
 const app = existing || initializeApp(config);
 
-export const store = getComponent(app);
+export const store = getStoreComponent(app);
+export const database = getDatabaseComponent(app);
+
 export * from './common';

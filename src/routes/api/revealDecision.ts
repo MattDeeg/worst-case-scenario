@@ -1,78 +1,77 @@
 import type { RequestHandler } from '@sveltejs/kit';
+import { database } from '$lib/firebase/server';
+import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
+import { asSuccess, successResponse } from '$lib/utils';
+import type { DecisionToken } from '$lib/firebase/dbTypes/Database';
 import { scoreRound } from '$lib/api/scoreRound';
-import { getAll } from '$lib/api/refs';
-import type { Decision, RunningGame, Value } from '$lib/firebase/docTypes/Game';
 
-interface Payload {
+export interface Payload {
 	gameID: string;
 	index: number;
 }
 
 export const post: RequestHandler = async (event) => {
 	const payload: Payload = await event.request.json();
-	const { userID } = event.locals;
+	const userID = event.locals.userID;
 	const { gameID, index } = payload;
 
 	if (!gameID || index == null) {
-		return { body: { success: false } };
+		return successResponse(false, 'invalid data');
 	}
 
-	const { metaRef, victimRef, gameRef } = getAll<RunningGame>(gameID);
-	const meta = (await metaRef.get()).data();
+	const db = wrapDatabase(database);
+	const gameRef = db.games[gameID];
 
-	if (meta.victim !== userID) {
-		return { body: { success: false } };
+	const victimSnap = await gameRef.round.victim.get();
+
+	if (!victimSnap.exists()) {
+		return successResponse(false, 'game does not exist');
+	}
+	if (victimSnap.val() !== userID) {
+		return successResponse(false, 'player is not victim');
 	}
 
-	const game = (await gameRef.get()).data();
+	const revealed = (await gameRef.round.revealed.get()).val();
+	if (revealed?.[index] === true) {
+		return successResponse(true, 'was previously revealed');
+	}
 
-	const tokenByUserId = Object.fromEntries(
-		Object.entries(meta.decisions)
-			.map(([userID, decisions]) => [userID, decisions?.tokens?.[index]])
-			.filter(([, token]) => token != null && token > -1)
-	) as Record<string, number>;
+	const updatedRevealed = revealed ?? [];
+	updatedRevealed[index] = true;
+	const allRevealed = updatedRevealed.length === 5 && updatedRevealed.every(Boolean);
 
-	const { [userID]: victimToken, ...otherTokens } = tokenByUserId;
-
-	const decision: Decision = {
-		card: game.cards[index],
-		guessers: Object.entries(otherTokens).map(([userID, token]) => ({
-			value: token as Value,
-			color: meta.users[userID].color
-		})),
-		victimToken: { value: victimToken as Value, color: meta.users[userID].color }
+	const tokens = (await gameRef.tokens.get()).val();
+	const victimToken: DecisionToken = {
+		userID,
+		token: tokens[userID][index]
 	};
+	const otherTokens: DecisionToken[] = Object.entries(tokens)
+		.map(([userID, tokens]) => ({
+			userID,
+			token: tokens[index]
+		}))
+		.filter((dt) => dt.userID !== userID);
 
-	const victim = (await victimRef.get()).data();
-	const revealed = victim.revealed;
-	revealed[index] = true;
-
-	const users = game.users;
-	if (revealed.every(Boolean)) {
-		const points = scoreRound(meta);
-		for (const userID in points) {
-			users[userID].score += points[userID];
-		}
-	}
-
-	const success = await Promise.all([
-		victimRef.set(
-			{
-				revealed
-			},
-			{ merge: true }
-		),
-		gameRef.set(
-			{
-				decision,
-				users
-			},
-			{ merge: true }
-		)
-	]).then(
-		() => true,
-		() => false
+	const success = await asSuccess(
+		gameRef.round.update({
+			revealed: updatedRevealed,
+			decision: {
+				cardIndex: index,
+				victim: victimToken,
+				others: otherTokens
+			}
+		}),
+		allRevealed &&
+			gameRef.round.get().then((round) =>
+				gameRef.scores.transaction((scores) => {
+					const roundScores = scoreRound(round.val(), tokens);
+					for (const uid in roundScores) {
+						scores[uid] = (scores[uid] ?? 0) + roundScores[uid];
+					}
+					return scores;
+				})
+			)
 	);
 
-	return { body: { success } };
+	return successResponse(success);
 };

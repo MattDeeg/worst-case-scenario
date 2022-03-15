@@ -1,21 +1,20 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { store, validateDocumentID } from '$lib/firebase/server';
-import type { GameType, LobbyGame, User } from '$lib/firebase/docTypes/Game';
+import { store, database, validateDocumentID } from '$lib/firebase/server';
+import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
 import { getString } from '$lib/api/readFormData';
 import { getColorFor } from '$lib/api/nextColor';
-import { getGame, getMeta, getVictim } from '$lib/api/refs';
+import { asSuccess, refExists } from '$lib/utils';
 
 export const post: RequestHandler = async (event) => {
 	const formData = await event.request.formData();
 
 	const userID = event.locals.userID;
-	const gameID = getString(formData, 'gameID');
-	const displayName = getString(formData, 'displayName');
+	const gameID = getString(formData, 'gameID') || store.generateID();
+	const name = getString(formData, 'displayName');
 	// todo
-	const type: GameType = 'competitive';
 	const allowedPacks: string[] = ['Base Game'];
 
-	if (!userID || !type || !displayName) {
+	if (!userID || !validateDocumentID(gameID) || !name || (allowedPacks?.length ?? 0 > 0)) {
 		return {
 			status: 302,
 			headers: {
@@ -24,56 +23,51 @@ export const post: RequestHandler = async (event) => {
 		};
 	}
 
-	let gameDoc = store.collectionDoc<LobbyGame>('games');
-	if (gameID) {
-		if (!validateDocumentID(gameID)) {
-			return {
-				status: 302,
-				headers: {
-					location: '/?error=invalidRoomID'
-				}
-			};
-		}
-		gameDoc = getGame(gameID);
+	const db = wrapDatabase(database);
+
+	const gameRef = db.games[gameID];
+
+	if (!(await refExists(gameRef.players.count))) {
+		return {
+			status: 302,
+			headers: {
+				location: '/?error=exists'
+			}
+		};
 	}
 
-	const startUser: User = {
-		id: userID,
-		host: true,
-		color: getColorFor(0),
-		displayName,
-		score: 0,
-		ready: false
-	};
-
-	await Promise.all([
-		gameDoc.set({
-			id: gameDoc.id,
-			type,
-			users: {
-				[userID]: startUser
-			}
+	const success = await asSuccess(
+		store.doc(`games/${gameID}`).set({
+			lastRoundAt: Date.now()
 		}),
-		getMeta(gameID).set({
-			victim: '',
-			bonusType: 0,
-			decisions: {},
-			users: {},
-			allowedPacks
-		}),
-		getVictim(gameID).set({
-			victim: '',
-			cards: [],
-			readyToReveal: false,
-			revealed: [false, false, false, false, false],
-			allowedPacks
+		gameRef.set({
+			players: {
+				count: 1,
+				users: {
+					[userID]: {
+						color: getColorFor(0),
+						name
+					}
+				}
+			},
+			cards: {
+				allowedPacks
+			},
+			victims: {
+				[userID]: 0
+			},
+			// unneeded to create game, but needed for type safety
+			ready: null,
+			round: null,
+			scores: null,
+			tokens: null
 		})
-	]);
+	);
 
 	return {
 		status: 302,
 		headers: {
-			location: `/room/${encodeURI(gameDoc.id)}`
+			location: success ? `/room/${encodeURI(gameID)}` : '?error=unknown'
 		}
 	};
 };

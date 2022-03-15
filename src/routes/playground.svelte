@@ -5,11 +5,11 @@
 
 	let flipped: boolean = true;
 	let spinner: number = 1;
-	let forceSpin: number = Date.now();
+	let forceSpin: string = String(Date.now());
 
 	const spinTo = (n: number) => {
 		if (spinner === n) {
-			forceSpin = Date.now();
+			forceSpin = String(Date.now());
 		} else {
 			spinner = n;
 		}

@@ -2,17 +2,20 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { database } from '$lib/firebase/server';
 import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
 import { asSuccess, successResponse } from '$lib/utils';
+import type { TokenValue } from '$lib/firebase/dbTypes/Database';
 
 export interface Payload {
 	gameID: string;
+	token: TokenValue;
+	cardIndex: TokenValue; // not quite right, but same values
 }
 
 export const post: RequestHandler = async (event) => {
 	const payload: Payload = await event.request.json();
 	const userID = event.locals.userID;
-	const { gameID } = payload;
+	const { gameID, token, cardIndex } = payload;
 
-	if (!gameID || !userID) {
+	if (!gameID || !userID || token == null || cardIndex == null) {
 		return successResponse(false, 'invalid data');
 	}
 
@@ -24,13 +27,20 @@ export const post: RequestHandler = async (event) => {
 		return successResponse(false, 'game does not exist or player not in game');
 	}
 
-	const tokens = tokenRef.val();
+	const success = await asSuccess(
+		gameRef.tokens[userID].transaction((tokens) => {
+			if (cardIndex !== -1) {
+				const tokenCurrentAssignedTo = tokens[token];
+				const tokenInPosition = tokens.indexOf(cardIndex);
 
-	if (tokens.length !== 5 || tokens.every((token) => token > -1)) {
-		return successResponse(false, 'commited tokens not valid to lock in');
-	}
-
-	const success = await asSuccess(gameRef.ready[userID].set(true));
+				if (tokenInPosition !== -1) {
+					tokens[tokenInPosition] = tokenCurrentAssignedTo;
+				}
+			}
+			tokens[token] = cardIndex;
+			return tokens;
+		})
+	);
 
 	return successResponse(success);
 };

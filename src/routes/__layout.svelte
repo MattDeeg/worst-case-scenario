@@ -1,5 +1,8 @@
 <script lang="ts">
 	import '../app.scss';
+	import { browser } from '$app/env';
 </script>
 
-<slot />
+{#if browser}
+	<slot />
+{/if}

@@ -1,7 +1,9 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { getGame, getMeta } from '$lib/api/refs';
+import { database } from '$lib/firebase/server';
+import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
+import { asSuccess, refExists, successResponse } from '$lib/utils';
 
-interface Payload {
+export interface Payload {
 	gameID: string;
 	color: string;
 	displayName: string;
@@ -14,31 +16,37 @@ export const post: RequestHandler = async (event) => {
 	const { gameID, color, displayName, ready } = payload;
 
 	if (!gameID || !color || !displayName) {
-		return { body: { success: false } };
+		return successResponse(false, 'invalid data');
 	}
 
-	const gameRef = getGame(gameID);
-	const game = (await gameRef.get()).data();
-	const metaRef = getMeta(gameID);
+	const db = wrapDatabase(database);
+	const gameRef = db.games[gameID];
 
-	if (!game.users[userID]) {
-		return { body: { success: false } };
+	if (!(await refExists(gameRef.players.users[userID].name))) {
+		return successResponse(false, 'game does not exist or player not in game');
 	}
 
-	const success = await Promise.all([
-		gameRef.update(
-			`users.${userID}.displayName`,
-			displayName,
-			`users.${userID}.color`,
+	const success = await asSuccess(
+		gameRef.ready[userID].set(ready),
+		gameRef.players.users[userID].set({
 			color,
-			`users.${userID}.ready`,
-			ready ?? true
-		),
-		metaRef.update(`users.${userID}.color`, color)
-	]).then(
-		() => true,
-		() => false
+			name: displayName
+		})
 	);
 
-	return { body: { success } };
+	if (!success) {
+		return {
+			status: 302,
+			headers: {
+				location: `/?error=nogame`
+			}
+		};
+	}
+
+	return {
+		status: 302,
+		headers: {
+			location: `/room/${gameID}`
+		}
+	};
 };

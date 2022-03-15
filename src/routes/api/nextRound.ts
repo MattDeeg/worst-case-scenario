@@ -1,81 +1,52 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import type { RunningGame } from '$lib/firebase/docTypes/Game';
-import { generateHand } from '$lib/api/generateHand';
+import { database, store } from '$lib/firebase/server';
+import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
+import { asSuccess, refExists, successResponse } from '$lib/utils';
 import { nextVictim } from '$lib/api/nextVictim';
 import { getBonusType } from '$lib/api/scoreRound';
-import { getAll } from '$lib/api/refs';
-import { store } from '$lib/firebase/server';
 
-interface Payload {
+export interface Payload {
 	gameID: string;
 }
 
 export const post: RequestHandler = async (event) => {
 	const payload: Payload = await event.request.json();
+	const userID = event.locals.userID;
 	const { gameID } = payload;
 
 	if (!gameID) {
-		return { body: { success: false } };
+		return successResponse(false, 'invalid data');
 	}
 
-	const { gameRef, metaRef, victimRef } = getAll(gameID);
-	const meta = (await metaRef.get()).data();
+	const db = wrapDatabase(database);
+	const gameRef = db.games[gameID];
 
-	const victim = nextVictim(meta.users);
-	if (!victim || !meta.users[victim]) {
-		return { body: { success: false } };
+	if (!(await refExists(gameRef.players.users[userID].name))) {
+		return successResponse(false, 'game does not exist or player not in game');
 	}
 
-	const game = (await gameRef.get()).data() as RunningGame;
-	const hand = await generateHand(
-		meta.allowedPacks,
-		game.cards.map((c) => c.id)
-	);
+	const victimTimes = (await gameRef.victims.get()).val();
+	const victim = nextVictim(victimTimes);
 
-	const unlockUsers = Object.keys(game.users).flatMap((userID) => [
-		`users.${userID}.lockedIn`,
-		false
-	]);
-
-	const bonusType = getBonusType(game.type);
-
-	const success = await Promise.all([
-		victimRef.set(
-			{
-				victim,
-				cards: hand,
-				readyToReveal: false,
-				revealed: [false, false, false, false, false]
+	const success = await asSuccess(
+		store.doc(`games/${gameID}`).set({
+			lastRoundAt: Date.now()
+		}),
+		gameRef.update({
+			ready: null,
+			victims: {
+				[victim]: Date.now()
 			},
-			{ merge: true }
-		),
-		metaRef.update(
-			'victim',
-			victim,
-			'bonusType',
-			bonusType,
-			`users${victim}.lastVictimAt`,
-			Date.now(),
-			'decisions',
-			{}
-		),
-		gameRef.update(
-			'bonusType',
-			bonusType,
-			'round',
-			game.round + 1,
-			'cards',
-			[],
-			'victim',
-			victim,
-			'decision',
-			store.fieldValues.delete(),
-			...unlockUsers
-		)
-	]).then(
-		() => true,
-		() => false
+			tokens: null,
+			round: {
+				id: store.generateID(),
+				victim,
+				bonusType: getBonusType(),
+				revealed: null,
+				cards: null // victim will fetch via API and then set
+			}
+		})
 	);
 
-	return { body: { success } };
+	return successResponse(success);
 };

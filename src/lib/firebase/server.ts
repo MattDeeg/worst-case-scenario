@@ -1,7 +1,8 @@
 import admin from 'firebase-admin';
-import { isLimit, isSortBy, isWhere, type QueryClause } from './types';
+import type { Reference } from '@firebase/database-types';
+import { isLimit, isSortBy, isWhere, type DataSnapshot, type QueryClause } from './types';
 
-const getComponent = (app: admin.app.App) => {
+const getStoreComponent = (app: admin.app.App) => {
 	const store = app.firestore();
 
 	function collection<T>(path: string): admin.firestore.CollectionReference<T>;
@@ -76,11 +77,29 @@ const getComponent = (app: admin.app.App) => {
 	};
 };
 
+const getDatabaseComponent = (app: admin.app.App) => {
+	const database = app.database();
+
+	type Callback = (snapshot: DataSnapshot) => unknown;
+
+	const ensureRef = (path: string): Reference => database.ref(path);
+
+	return {
+		get: (path: string): Promise<DataSnapshot> => ensureRef(path).get(),
+		set: (path: string, data: unknown): Promise<void> => ensureRef(path).set(data),
+		update: (path: string, data: unknown): Promise<void> => ensureRef(path).update(data),
+		onValue: (path: string, callback: Callback) => ensureRef(path).on('value', callback),
+		transaction: <T>(path: string, callback: (current: T) => T): Promise<void> =>
+			ensureRef(path).transaction(callback)
+	};
+};
+
 const configStr = import.meta.env.VITE_FIREBASE_SERVER_CONFIG as string;
 const config = JSON.parse(configStr);
 config.credential = admin.credential.cert(config.credential);
 
 const app = admin.apps[0] || admin.initializeApp(config);
 
-export const store = getComponent(app);
+export const store = getStoreComponent(app);
+export const database = getDatabaseComponent(app);
 export * from './common';

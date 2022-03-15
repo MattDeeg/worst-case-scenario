@@ -1,28 +1,34 @@
 <script lang="ts">
-	import { getRoundContext } from './RoundManager.svelte';
-	import Token, { isTokenValue } from './Token.svelte';
+	import { isTokenValue } from '$lib/firebase/dbTypes/Database';
 
-	const { color, isLockedIn, tokens, updateToken, api } = getRoundContext();
+	import { getRoomContext } from '../context';
 
-	$: allAssigned = $tokens.every((v) => v > -1);
+	import Token from './Token.svelte';
+
+	const { userID, user, tokens, readiness, api } = getRoomContext();
+
+	$: tokenValues = $tokens;
+	$: allAssigned = tokenValues.every((v) => v > -1);
 
 	const unsetToken = (e: DragEvent) => {
 		const token = JSON.parse(e.dataTransfer.getData('application/playertoken'));
-		updateToken(token, null);
+		api.setToken({
+			token,
+			cardIndex: -1
+		});
 	};
+	const lockIn = () => api.lockIn();
 </script>
 
-{#if !$isLockedIn}
+{#if !$readiness?.[userID]}
 	<div class="bottomBar" on:dragover|preventDefault on:drop={unsetToken}>
 		{#if allAssigned}
-			<button style="max-width:50vw" on:click={() => api.lockIn($tokens)} type="button">
-				Lock In
-			</button>
+			<button style="max-width:50vw" on:click={lockIn} type="button"> Lock In </button>
 		{:else}
-			{#each $tokens as value, i (i)}
+			{#each tokenValues as value, i (i)}
 				<span>
 					{#if value === -1 && isTokenValue(i)}
-						<Token draggable value={i} {color} />
+						<Token draggable value={i} color={$user.color} />
 					{/if}
 				</span>
 			{/each}

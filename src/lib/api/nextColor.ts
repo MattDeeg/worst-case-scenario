@@ -1,5 +1,3 @@
-import type { Game } from '$lib/firebase/docTypes/Game';
-
 const colors = [
 	'#c51111',
 	'#132ed1',
@@ -17,9 +15,4 @@ const colors = [
 
 export const getColorFor = (index: number) => {
 	return colors[index % colors.length];
-};
-
-export const nextColor = (game: Game) => {
-	const currentUsers = Object.keys(game.users).length;
-	return getColorFor(currentUsers);
 };

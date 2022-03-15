@@ -13,41 +13,11 @@ service cloud.firestore {
       // seed: number
       // cardPack: string?
     }
-
-    match /gameMeta/{game} {
-      allow read, write: if false;
-      // users:
-      //   tokens: number[];
-      //   lastVictimAt?: number;
-      //   active: boolean;
-    }
-
-    match /gameVictim/{game} {
-      allow read: if true;
-      allow write: if false;
-
-      // cards: Card[];
-      // readyToReveal: boolean;
-    }
-
     match /games/{game} {
-      allow read: if true;
+      allow read: if false;
       allow write: if false;
 
-      // type: casual | scored
-      // cards: Card[];
-      // victim: string;
-      // round: number;
-      // bonusType: number;
-      // users: Record<string, ...
-      //   id: string;
-      //   host: boolean;
-      //   displayName: string;
-      //   color: string;
-      //   score: number;
-      // decision?:
-      //   cardID: string;
-      //   users: Record<string, string>
+      // lastRoundAt
     }
   }
 }
