@@ -5,6 +5,9 @@
 
 	let linkedRoom = $page.url.searchParams.get('room');
 	let displayName = sillyname();
+	const regenName = () => {
+		displayName = sillyname();
+	};
 
 	let nameError = false;
 	const validate = (e: SubmitEvent) => {
@@ -41,13 +44,16 @@
 		</label>
 		<label for="displayName">
 			My Name:
-			<input
-				type="text"
-				name="displayName"
-				bind:value={displayName}
-				placeholder="My Name"
-				autocomplete="off"
-			/>
+			<div class="reloadWrapper">
+				<input
+					type="text"
+					name="displayName"
+					bind:value={displayName}
+					placeholder="My Name"
+					autocomplete="off"
+				/>
+				<button on:click={regenName} type="button">Reload</button>
+			</div>
 			<sub class="error">
 				&nbsp;
 				{#if nameError}
@@ -63,7 +69,7 @@
 	</form>
 </Surface>
 
-<style>
+<style lang="scss">
 	.secondary {
 		--primary: var(--brand-900);
 		--primary-hover: var(--brand-800);
@@ -76,5 +82,25 @@
 	}
 	.error {
 		color: #f00;
+	}
+	.reloadWrapper {
+		position: relative;
+		button {
+			background: transparent;
+			background-image: url(/static/reload.svg);
+			background-size: contain;
+			background-repeat: no-repeat;
+			border: 0;
+			color: transparent;
+			position: absolute;
+			right: 0.75em;
+			top: 0.75em;
+			height: 1.5em;
+			width: 1.5em;
+			cursor: pointer;
+			user-select: none;
+			padding: 0;
+			margin: 0;
+		}
 	}
 </style>

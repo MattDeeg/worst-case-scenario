@@ -42,8 +42,9 @@ export const post: RequestHandler = async (event) => {
 				id: store.generateID(),
 				victim,
 				bonusType: getBonusType(),
-				revealed: null,
-				cards: null // victim will fetch via API and then set
+				revealed: [false, false, false, false, false],
+				cards: ['', '', '', '', ''],
+				decision: null
 			}
 		})
 	);

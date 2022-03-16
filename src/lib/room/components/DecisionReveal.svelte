@@ -1,10 +1,23 @@
 <script lang="ts">
+	import type { DecisionToken, TokenValue } from '$lib/firebase/dbTypes/Database';
 	import Card from './Card.svelte';
 	import Token from './Token.svelte';
 	import { getRoomContext, type UserWithID } from '../context';
-	import type { DecisionToken, TokenValue } from '$lib/firebase/dbTypes/Database';
+	import { fly } from 'svelte/transition';
+
+	function swoop(node, opts) {
+		const anim = fly(node, { ...opts, opacity: 1 });
+		if (card === '') {
+			return { delay: 0, duration: 0 };
+		}
+		return {
+			...anim,
+			css: (t, u) => `z-index: 5; ${anim.css(t, u)}`
+		};
+	}
 
 	const { round, users } = getRoomContext();
+	let keyForTransition = 100000;
 
 	const getTokenProps = (token: DecisionToken, users: UserWithID[]) => {
 		if (!token) {
@@ -23,24 +36,33 @@
 	$: guessers = ($round?.decision?.others ?? []).map((token) => getTokenProps(token, $users));
 </script>
 
-<div class="wrapper">
-	{#if card}
-		<Card text={card} flipped>
-			<Token {...victimToken} slot="victim" />
-			<div class="column flex-wrap" style="height: 100%">
-				{#each guessers as guessToken}
-					<Token {...guessToken} />
-				{/each}
+{#if card !== ''}
+	<div class="decisionWrapper">
+		{#key card}
+			<div class="transition" out:swoop={{ y: -1000, duration: 1500 }}>
+				<Card text={card} flipped>
+					<Token {...victimToken} slot="victim" />
+					<div class="column flex-wrap g1" style="height: 100%">
+						{#each guessers as guessToken}
+							<Token {...guessToken} />
+						{/each}
+					</div>
+				</Card>
 			</div>
-		</Card>
-	{/if}
-</div>
+		{/key}
+	</div>
+{/if}
 
 <style>
-	.wrapper {
+	.transition {
+		position: absolute;
+	}
+	.decisionWrapper {
+		--ratio: 0.75;
 		display: flex;
 		flex-grow: 1;
 		justify-content: center;
-		--ratio: 0.75;
+		align-self: start;
+		margin-top: 5em;
 	}
 </style>

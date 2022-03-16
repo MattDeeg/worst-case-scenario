@@ -51,6 +51,7 @@ body {
 	min-height: 100vh;
 	width: 100vw;
 	background-color: var(--page-bg);
+	overflow-x: hidden;
 
 	@media (prefers-color-scheme: dark) {
 		--page-bg: var(--brand-900);
@@ -206,6 +207,7 @@ input[type='submit'] {
 	cursor: pointer;
 	transition: background-color var(--transition), border-color var(--transition),
 		color var(--transition), box-shadow var(--transition);
+	user-select: none;
 }
 button {
 	margin: 0;

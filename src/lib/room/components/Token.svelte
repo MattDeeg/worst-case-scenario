@@ -46,7 +46,7 @@
 {#if labels[value]}
 	<span {draggable} class="wrapper" class:disabled on:dragstart={handleDragStart} bind:this={svg}>
 		{#key value}
-			<svg viewBox="0 0 200 200" on:click in:receive={animKey} out:send={animKey}>
+			<svg viewBox="0 0 200 200" on:click>
 				<defs>
 					<path d="m35,97 a60,60 90 0 1 130,0" id="top" />
 					<path d="m5,97 a95,95 0 0 0 190,0" id="bottom" />

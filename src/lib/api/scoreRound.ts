@@ -72,7 +72,11 @@ const scoreYourChips = (correct: number[], guesses: number[]) => {
 
 const scoreFunctions = [theFourIsMore, allIsBonus, badIsGood, scoreYourChips, tripleUp, doubleUp];
 
-export const getBonusType = (): number => Math.floor(Math.random() * scoreFunctions.length - 1);
+export const getBonusType = (): number => {
+	const r = Math.floor(Math.random() * (scoreFunctions.length - 1));
+	console.log({ r });
+	return r;
+};
 
 export const scoreRound = (
 	round: Round,

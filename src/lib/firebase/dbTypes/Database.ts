@@ -1,5 +1,6 @@
 export type TokenValue = -1 | 0 | 1 | 2 | 3 | 4;
 export const isTokenValue = (n: number): n is TokenValue => n > -1 && n < 5;
+export const asTokenValue = (n: number): TokenValue => (isTokenValue(n) ? n : -1);
 
 export interface DecisionToken {
 	userID: string;

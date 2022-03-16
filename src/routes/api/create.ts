@@ -14,7 +14,7 @@ export const post: RequestHandler = async (event) => {
 	// todo
 	const allowedPacks: string[] = ['Base Game'];
 
-	if (!userID || !validateDocumentID(gameID) || !name || (allowedPacks?.length ?? 0 > 0)) {
+	if (!userID || !validateDocumentID(gameID) || !name || (allowedPacks?.length ?? 0) === 0) {
 		return {
 			status: 302,
 			headers: {
@@ -27,7 +27,7 @@ export const post: RequestHandler = async (event) => {
 
 	const gameRef = db.games[gameID];
 
-	if (!(await refExists(gameRef.players.count))) {
+	if (await refExists(gameRef.players.count)) {
 		return {
 			status: 302,
 			headers: {

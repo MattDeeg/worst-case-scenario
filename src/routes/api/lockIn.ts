@@ -26,7 +26,7 @@ export const post: RequestHandler = async (event) => {
 
 	const tokens = tokenRef.val();
 
-	if (tokens.length !== 5 || tokens.every((token) => token > -1)) {
+	if (tokens.length !== 5 || tokens.some((token) => token === -1)) {
 		return successResponse(false, 'commited tokens not valid to lock in');
 	}
 

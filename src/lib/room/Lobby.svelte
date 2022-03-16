@@ -6,14 +6,9 @@
 	const { api, gameID, userID, user, users, readiness } = getRoomContext();
 
 	$: isReady = $readiness?.[userID] ?? false;
+	$: allReady = $users.every((user) => $readiness?.[user.id] === true);
 	let userColor = $user?.color;
 	let userName = $user?.name;
-	let allReady = false;
-	$: {
-		const userIDs = Object.keys($users);
-		const ready = $readiness;
-		allReady = userIDs.every((id) => ready[id] === true);
-	}
 
 	const readyUser = () =>
 		api.readyUser({
@@ -34,7 +29,7 @@
 				{#if isSelfUnready}
 					<input class="flex-auto" style="--spacing: 0" bind:value={userName} />
 				{:else}
-					<span class="flex-auto">
+					<span class="flex-auto username">
 						{user.name}
 					</span>
 				{/if}
@@ -49,7 +44,7 @@
 					disabled={!isSelf}
 					on:click={readyUser}
 					class="inline-btn"
-					class:ready={$readiness[user.id]}
+					class:ready={$readiness?.[user.id]}
 				>
 					Ready <i>✓</i>
 				</button>
@@ -60,6 +55,9 @@
 </Surface>
 
 <style lang="scss">
+	.username {
+		font-weight: bold;
+	}
 	.inline-btn {
 		width: auto;
 		margin: auto 0 0;

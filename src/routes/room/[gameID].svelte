@@ -36,10 +36,11 @@
 	const db = wrapDatabase(database);
 	const gameRef = db.games[gameID];
 	const sortById = (a: UserWithID, b: UserWithID) => a.id.localeCompare(b.id);
+
 	const userStore = watchStore(gameRef.players.users);
-	const myUserStore = derived(userStore, ($users) => $users[userID]);
+	const myUserStore = derived(userStore, ($users) => $users?.[userID]);
 	const userListStore = derived(userStore, ($users) => {
-		const { [userID]: myUser, ...others } = $users;
+		const { [userID]: myUser, ...others } = $users ?? {};
 
 		const self: UserWithID = { id: userID, ...myUser };
 		const othersWithID: UserWithID[] = Object.entries(others)
@@ -49,12 +50,12 @@
 			}))
 			.sort(sortById);
 
-		return [self, ...othersWithID];
+		return [self, ...othersWithID].filter((user) => user?.name);
 	});
 	const roundStore = watchStore(gameRef.round);
 	const cardStore = derived(roundStore, ($round) => {
-		if ($round.cards?.length === 5) {
-			return $round.cards;
+		if ($round?.cards?.length === 5) {
+			return $round?.cards;
 		}
 		return Array.from({ length: 5 }, () => '');
 	});
@@ -65,7 +66,7 @@
 	);
 	const readinessStore = watchStore(gameRef.ready);
 	const allReadyStore = derived([userStore, readinessStore], ([$users, $readiness]) => {
-		return Object.keys($users).every((id) => $readiness[id] === true);
+		return Object.keys($users ?? {}).every((id) => $readiness?.[id] === true);
 	});
 
 	setRoomContext({
@@ -83,7 +84,9 @@
 	});
 </script>
 
-{#if !$roundStore}
+{#if !$myUserStore}
+	loading loading loading
+{:else if !$roundStore}
 	<Lobby />
 {:else}
 	<Game />

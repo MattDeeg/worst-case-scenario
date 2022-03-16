@@ -18,7 +18,7 @@
 
 <div class="cards">
 	{#each displayCards as text, i (i)}
-		{@const token = $tokens[i]}
+		{@const token = ($tokens ?? []).indexOf(i)}
 		<Card droppable {text} on:droppedToken={(e) => updateToken(e.detail, i)} flipped={text !== ''}>
 			{#if isTokenValue(token)}
 				<Token draggable value={token} color={$user.color} slot="token" />

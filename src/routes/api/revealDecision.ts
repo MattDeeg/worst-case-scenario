@@ -32,9 +32,9 @@ export const post: RequestHandler = async (event) => {
 	}
 
 	const revealed = (await gameRef.round.revealed.get()).val();
-	if (revealed?.[index] === true) {
-		return successResponse(true, 'was previously revealed');
-	}
+	// if (revealed?.[index] === true) {
+	// 	return successResponse(true, 'was previously revealed');
+	// }
 
 	const updatedRevealed = revealed ?? [];
 	updatedRevealed[index] = true;
@@ -63,11 +63,13 @@ export const post: RequestHandler = async (event) => {
 		}),
 		allRevealed &&
 			gameRef.round.get().then((round) =>
-				gameRef.scores.transaction((scores) => {
+				gameRef.scores.transaction((dbScores) => {
+					const scores = dbScores ?? {};
 					const roundScores = scoreRound(round.val(), tokens);
 					for (const uid in roundScores) {
 						scores[uid] = (scores[uid] ?? 0) + roundScores[uid];
 					}
+					console.log(roundScores, scores);
 					return scores;
 				})
 			)

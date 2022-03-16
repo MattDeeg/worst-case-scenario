@@ -8,47 +8,45 @@
 	$: {
 		noop(forceSpin);
 		if (angle < 360) {
-			angle = 3600 + 60 * (target - 1);
+			angle = 3600 + 60 * target;
 		} else {
-			angle = 60 * (target - 1);
+			angle = 60 * target;
 		}
 	}
 </script>
 
-{#if target !== 0}
-	<div class="scrim">
-		<div class="container">
-			<div class="spinner" style="--rotation:{angle}deg">
-				<div class="face">
-					<div class="title">The 4 is more</div>
-					<div class="body">Players who match The Victim's #4 chip get a 4-point bonus.</div>
+<div class="scrim">
+	<div class="container">
+		<div class="spinner" style="--rotation:{angle}deg">
+			<div class="face">
+				<div class="title">The 4 is more</div>
+				<div class="body">Players who match The Victim's #4 chip get a 4-point bonus.</div>
+			</div>
+			<div class="face">
+				<div class="title">All = Bonus!</div>
+				<div class="body">Players who match all The Victim's chips get a 5-point bonus.</div>
+			</div>
+			<div class="face">
+				<div class="title">Bad is Good!</div>
+				<div class="body">Players who match the victim's #1 chip get a 1-point bonus.</div>
+			</div>
+			<div class="face">
+				<div class="title">Score Your Chips</div>
+				<div class="body">
+					Your point total equals the numbers shown on all your matching chips.
 				</div>
-				<div class="face">
-					<div class="title">All = Bonus!</div>
-					<div class="body">Players who match all The Victim's chips get a 5-point bonus.</div>
-				</div>
-				<div class="face">
-					<div class="title">Bad is Good!</div>
-					<div class="body">Players who match the victim's #1 chip get a 1-point bonus.</div>
-				</div>
-				<div class="face">
-					<div class="title">Score Your Chips</div>
-					<div class="body">
-						Your point total equals the numbers shown on all your matching chips.
-					</div>
-				</div>
-				<div class="face">
-					<div class="title">Triple Up!</div>
-					<div class="body">All players triple their points</div>
-				</div>
-				<div class="face">
-					<div class="title">Double Up!</div>
-					<div class="body">All players double their points</div>
-				</div>
+			</div>
+			<div class="face">
+				<div class="title">Triple Up!</div>
+				<div class="body">All players triple their points</div>
+			</div>
+			<div class="face">
+				<div class="title">Double Up!</div>
+				<div class="body">All players double their points</div>
 			</div>
 		</div>
 	</div>
-{/if}
+</div>
 
 <style lang="scss">
 	.scrim {

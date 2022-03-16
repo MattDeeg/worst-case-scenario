@@ -89,7 +89,7 @@ const getDatabaseComponent = (app: admin.app.App) => {
 		set: (path: string, data: unknown): Promise<void> => ensureRef(path).set(data),
 		update: (path: string, data: unknown): Promise<void> => ensureRef(path).update(data),
 		onValue: (path: string, callback: Callback) => ensureRef(path).on('value', callback),
-		transaction: <T>(path: string, callback: (current: T) => T): Promise<void> =>
+		transaction: <T>(path: string, callback: (current: DataSnapshot) => T): Promise<void> =>
 			ensureRef(path).transaction(callback)
 	};
 };

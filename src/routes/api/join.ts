@@ -24,7 +24,8 @@ export const post: RequestHandler = async (event) => {
 	const db = wrapDatabase(database);
 	const gameRef = db.games[gameID];
 
-	if (!(await refExists(gameRef.players.count))) {
+	const exists = await refExists(gameRef.players.count);
+	if (!exists) {
 		return {
 			status: 302,
 			headers: {
@@ -46,6 +47,7 @@ export const post: RequestHandler = async (event) => {
 	const success = await asSuccess(
 		gameRef.victims[userID].set(0),
 		gameRef.players.transaction((players) => {
+			console.log({ players });
 			const color = getColorFor(players.count);
 			players.count++;
 			players.users[userID] = {

@@ -2,6 +2,9 @@ import type { DataSnapshot } from '../types';
 import type { DBSchema } from './Database';
 
 const flatten = (obj: unknown, path = '') => {
+	if (typeof obj !== 'object' || Array.isArray(obj) || obj == null) {
+		return obj;
+	}
 	const flattened = Object.entries(obj).flatMap(([key, value]) => {
 		const nKey = path === '' ? key : `${path}/${key}`;
 		if (typeof value === 'object' && !Array.isArray(value) && value != null) {
@@ -13,9 +16,6 @@ const flatten = (obj: unknown, path = '') => {
 	return flattened;
 };
 const flattenPartialObject = (obj: unknown) => {
-	if (typeof obj === 'object' && !Array.isArray(obj) && obj != null) {
-		return obj;
-	}
 	return Object.fromEntries(flatten(obj));
 };
 
@@ -24,7 +24,7 @@ export interface Ref<T> {
 	set: (data: T) => Promise<void>;
 	update: (data: DeepPartial<T>) => Promise<void>;
 	transaction: (callback: (current: T) => T) => Promise<void>;
-	onValue: (callback: (current: T) => unknown) => void;
+	onValue: (callback: (current: DataSnapshot<T>) => unknown) => void;
 }
 
 export type RefOf<T> = {
@@ -36,10 +36,11 @@ const ref = <T>(db: Database, path: string): Ref<T> => ({
 	set: (value: T) => db.set(path, value),
 	update: (value: DeepPartial<T>) => {
 		const flatValue = flattenPartialObject(value);
+		console.log(flatValue);
 		return db.update(path, flatValue);
 	},
 	transaction: (callback: (current: T) => T) => db.transaction(path, callback),
-	onValue: (callback: (current: T) => unknown) => db.onValue(path, callback)
+	onValue: (callback: (current: DataSnapshot<T>) => unknown) => db.onValue(path, callback)
 });
 
 const asRef = <T>(db: Database, path: string): RefOf<T> => {

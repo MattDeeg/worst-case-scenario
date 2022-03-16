@@ -22,13 +22,14 @@ export const post: RequestHandler = async (event) => {
 	const db = wrapDatabase(database);
 	const gameRef = db.games[gameID];
 
-	const tokenRef = await gameRef.tokens[userID].get();
-	if (!tokenRef.exists()) {
+	const colorRef = await gameRef.players.users[userID].color.get();
+	if (!colorRef.exists()) {
 		return successResponse(false, 'game does not exist or player not in game');
 	}
 
 	const success = await asSuccess(
-		gameRef.tokens[userID].transaction((tokens) => {
+		gameRef.tokens[userID].transaction((dbTokens) => {
+			const tokens = dbTokens ?? [-1, -1, -1, -1, -1];
 			if (cardIndex !== -1) {
 				const tokenCurrentAssignedTo = tokens[token];
 				const tokenInPosition = tokens.indexOf(cardIndex);

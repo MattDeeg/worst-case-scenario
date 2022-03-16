@@ -14,12 +14,14 @@
 <UserList />
 {#if $round}
 	{#key $round.id}
-		{#if $round.decision && userID !== $round.victim}
+		{#if $round.decision}
 			<DecisionReveal />
-		{:else if userID === $round.victim}
+		{:else if userID !== $round.victim || $round.cards?.[0]}
+			<Predicaments />
+		{/if}
+		{#if userID === $round.victim}
 			<VictimBar />
 		{:else}
-			<Predicaments />
 			<PlayerBar />
 		{/if}
 	{/key}

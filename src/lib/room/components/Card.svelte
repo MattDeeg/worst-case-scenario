@@ -64,7 +64,7 @@
 		height: calc(35rem * var(--r));
 	}
 	.token {
-		--radius: 3em;
+		--radius: var(--token-radius, 3em);
 		position: absolute;
 		top: 0;
 		right: 0;

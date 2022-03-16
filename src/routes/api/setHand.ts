@@ -32,7 +32,10 @@ export const post: RequestHandler = async (event) => {
 
 	const success = await asSuccess(
 		gameRef.cards.ids.set(cards.map((c) => c.id)),
-		gameRef.round.cards.set(cards.map((c) => c.text))
+		gameRef.round.update({
+			cards: cards.map((c) => c.text),
+			revealed: cards.map(() => false)
+		})
 	);
 
 	return successResponse(success);
