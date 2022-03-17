@@ -30,7 +30,8 @@ export const post: RequestHandler = async (event) => {
 		gameRef.ready[userID].set(ready),
 		gameRef.players.users[userID].set({
 			color,
-			name: displayName
+			name: displayName,
+			inactive: false
 		})
 	);
 

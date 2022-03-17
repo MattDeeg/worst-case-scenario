@@ -47,12 +47,12 @@ export const post: RequestHandler = async (event) => {
 	const success = await asSuccess(
 		gameRef.victims[userID].set(0),
 		gameRef.players.transaction((players) => {
-			console.log({ players });
 			const color = getColorFor(players.count);
 			players.count++;
 			players.users[userID] = {
 				color,
-				name: displayName
+				name: displayName,
+				inactive: false
 			};
 			return players;
 		})

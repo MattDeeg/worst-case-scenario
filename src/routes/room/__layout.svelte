@@ -16,4 +16,33 @@
 	};
 </script>
 
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+	const { gameID } = $page.params;
+	const activate = () => {
+		navigator.sendBeacon(`/api/${gameID}/reactivate`);
+	};
+	const deactivate = () => {
+		navigator.sendBeacon(`/api/${gameID}/deactivate`);
+	};
+	const visibilityWrapper = () => {
+		if (document.visibilityState === 'hidden') {
+			deactivate();
+		} else {
+			activate();
+		}
+	};
+
+	onMount(() => {
+		document.addEventListener('visibilitychange', visibilityWrapper);
+		activate();
+		return () => {
+			document.removeEventListener('visibilitychange', visibilityWrapper);
+			deactivate();
+		};
+	});
+</script>
+
+<svelte:window on:beforeunload={deactivate} />
 <slot />

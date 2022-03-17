@@ -36,7 +36,6 @@ const ref = <T>(db: Database, path: string): Ref<T> => ({
 	set: (value: T) => db.set(path, value),
 	update: (value: DeepPartial<T>) => {
 		const flatValue = flattenPartialObject(value);
-		console.log(flatValue);
 		return db.update(path, flatValue);
 	},
 	transaction: (callback: (current: T) => T) => db.transaction(path, callback),

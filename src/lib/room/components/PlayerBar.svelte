@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { isTokenValue } from '$lib/firebase/dbTypes/Database';
+	import { asTokenValue, isTokenValue } from '$lib/firebase/dbTypes/Database';
 
 	import { getRoomContext } from '../context';
 
 	import Token from './Token.svelte';
 
-	const { userID, user, tokens, readiness, api } = getRoomContext();
+	const { userID, user, cards, tokens, readiness, api } = getRoomContext();
 
 	$: tokenValues = $tokens ?? [-1, -1, -1, -1, -1];
 	$: allAssigned = tokenValues.every((v) => v > -1);
+	$: hasCards = $cards?.[0] !== '';
 
 	const unsetToken = (e: DragEvent) => {
 		const token = JSON.parse(e.dataTransfer.getData('application/playertoken'));
@@ -28,7 +29,7 @@
 			{#each tokenValues as value, i (i)}
 				<span class="tokenWrapper">
 					{#if value === -1 && isTokenValue(i)}
-						<Token draggable value={i} color={$user?.color} />
+						<Token draggable={hasCards} value={i} color={$user?.color} />
 					{/if}
 				</span>
 			{/each}

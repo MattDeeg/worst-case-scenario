@@ -5,7 +5,7 @@
 	import Card from './Card.svelte';
 	import Token from './Token.svelte';
 
-	const { api, cards, tokens, user } = getRoomContext();
+	const { api, cards, tokens, readiness, user, userID } = getRoomContext();
 
 	const updateToken = (token: TokenValue, cardIndex: number) => {
 		if (isTokenValue(cardIndex)) {
@@ -14,15 +14,20 @@
 	};
 
 	$: displayCards = $cards;
+	$: lockedIn = $readiness?.[userID];
 </script>
 
 <div class="cards">
 	{#each displayCards as text, i (i)}
 		{@const token = ($tokens ?? []).indexOf(i)}
 		<Card droppable {text} on:droppedToken={(e) => updateToken(e.detail, i)} flipped={text !== ''}>
-			{#if isTokenValue(token)}
-				<Token draggable value={token} color={$user.color} slot="token" />
-			{/if}
+			<svelte:fragment slot="token">
+				{#key token}
+					{#if isTokenValue(token)}
+						<Token draggable={!lockedIn} value={token} color={$user.color} />
+					{/if}
+				{/key}
+			</svelte:fragment>
 		</Card>
 	{/each}
 </div>

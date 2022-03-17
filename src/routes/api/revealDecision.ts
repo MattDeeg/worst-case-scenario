@@ -2,20 +2,20 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { database } from '$lib/firebase/server';
 import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
 import { asSuccess, successResponse } from '$lib/utils';
-import type { DecisionToken } from '$lib/firebase/dbTypes/Database';
+import type { DecisionToken, TokenValue } from '$lib/firebase/dbTypes/Database';
 import { scoreRound } from '$lib/api/scoreRound';
 
 export interface Payload {
 	gameID: string;
-	index: number;
+	token: TokenValue;
 }
 
 export const post: RequestHandler = async (event) => {
 	const payload: Payload = await event.request.json();
 	const userID = event.locals.userID;
-	const { gameID, index } = payload;
+	const { gameID, token } = payload;
 
-	if (!gameID || index == null) {
+	if (!gameID || token == null) {
 		return successResponse(false, 'invalid data');
 	}
 
@@ -32,31 +32,32 @@ export const post: RequestHandler = async (event) => {
 	}
 
 	const revealed = (await gameRef.round.revealed.get()).val();
-	// if (revealed?.[index] === true) {
-	// 	return successResponse(true, 'was previously revealed');
-	// }
+	if (revealed?.[token] === true) {
+		return successResponse(true, 'was previously revealed');
+	}
 
 	const updatedRevealed = revealed ?? [];
-	updatedRevealed[index] = true;
+	updatedRevealed[token] = true;
 	const allRevealed = updatedRevealed.length === 5 && updatedRevealed.every(Boolean);
 
 	const tokens = (await gameRef.tokens.get()).val();
+	const cardIndex = tokens[userID][token];
 	const victimToken: DecisionToken = {
 		userID,
-		token: tokens[userID][index]
+		token
 	};
 	const otherTokens: DecisionToken[] = Object.entries(tokens)
 		.map(([userID, tokens]) => ({
 			userID,
-			token: tokens[index]
+			token: tokens.indexOf(cardIndex) as TokenValue
 		}))
-		.filter((dt) => dt.userID !== userID);
+		.filter((dt) => dt.userID !== userID && dt.token > -1);
 
 	const success = await asSuccess(
 		gameRef.round.update({
 			revealed: updatedRevealed,
 			decision: {
-				cardIndex: index,
+				cardIndex,
 				victim: victimToken,
 				others: otherTokens
 			}
@@ -69,7 +70,6 @@ export const post: RequestHandler = async (event) => {
 					for (const uid in roundScores) {
 						scores[uid] = (scores[uid] ?? 0) + roundScores[uid];
 					}
-					console.log(roundScores, scores);
 					return scores;
 				})
 			)

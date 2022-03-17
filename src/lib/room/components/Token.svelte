@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { TokenValue } from '$lib/firebase/dbTypes/Database';
+	import { onDestroy } from 'svelte';
 	import { getAnimationContext } from '../context';
 
 	export let value: TokenValue;
@@ -38,49 +39,70 @@
 		}
 	};
 
+	onDestroy(removeClone);
+
 	const { send, receive } = getAnimationContext();
-	const animKey = { key: `token.${value}` };
+	const animKey = `token.${value}`;
+	// TODO: animations left on local because they're causing unmount issues (whee)
+	const condReceive = (node, params) => {
+		if (draggable) {
+			return receive(node, { ...params, key: animKey });
+		}
+		return { duration: 0 };
+	};
+	const condSend = (node, params) => {
+		if (draggable) {
+			return send(node, { ...params, key: animKey });
+		}
+		return { duration: 0 };
+	};
 </script>
 
 <svelte:body on:dragend={removeClone} />
-{#if labels[value]}
-	<span {draggable} class="wrapper" class:disabled on:dragstart={handleDragStart} bind:this={svg}>
-		{#key value}
-			<svg viewBox="0 0 200 200" on:click>
-				<defs>
-					<path d="m35,97 a60,60 90 0 1 130,0" id="top" />
-					<path d="m5,97 a95,95 0 0 0 190,0" id="bottom" />
-				</defs>
-				<circle cx="100" cy="100" r="90" fill="#FFF" id="background" />
-				<circle fill="none" stroke={color} cx="100" cy="100" r="80" stroke-width="40" id="rim" />
-				<text
-					style="text-anchor: middle;font-size: 8rem;font-weight: bold;"
-					x="100"
-					y="140"
-					fill={color}
-					class="value">{value + 1}</text
-				>
-				<g style="text-transform: uppercase; font-size: 2rem">
-					<text>
-						<textPath
-							style="text-anchor:middle; letter-spacing:-0.05em"
-							class="top"
-							startOffset="50%"
-							fill="#fff"
-							xlink:href="#top">{label ?? labels[value]}</textPath
-						>
-					</text>
-					<text>
-						<textPath
-							style="text-anchor:middle; letter-spacing:0.15em"
-							startOffset="50%"
-							fill="#fff"
-							xlink:href="#bottom">{labels[value]}</textPath
-						>
-					</text>
-				</g>
-			</svg>
-		{/key}
+{#if labels?.[value]}
+	<span
+		{draggable}
+		class="wrapper"
+		class:disabled
+		on:dragstart={handleDragStart}
+		bind:this={svg}
+		in:condReceive|local
+		out:condSend|local
+	>
+		<svg viewBox="0 0 200 200" on:click>
+			<defs>
+				<path d="m35,97 a60,60 90 0 1 130,0" id="top" />
+				<path d="m5,97 a95,95 0 0 0 190,0" id="bottom" />
+			</defs>
+			<circle cx="100" cy="100" r="90" fill="#FFF" id="background" />
+			<circle fill="none" stroke={color} cx="100" cy="100" r="80" stroke-width="40" id="rim" />
+			<text
+				style="text-anchor: middle;font-size: 8rem;font-weight: bold;"
+				x="100"
+				y="140"
+				fill={color}
+				class="value">{value + 1}</text
+			>
+			<g style="text-transform: uppercase; font-size: 2rem">
+				<text>
+					<textPath
+						style="text-anchor:middle; letter-spacing:-0.05em"
+						class="top"
+						startOffset="50%"
+						fill="#fff"
+						xlink:href="#top">{label ?? labels?.[value]}</textPath
+					>
+				</text>
+				<text>
+					<textPath
+						style="text-anchor:middle; letter-spacing:0.15em"
+						startOffset="50%"
+						fill="#fff"
+						xlink:href="#bottom">{labels?.[value]}</textPath
+					>
+				</text>
+			</g>
+		</svg>
 	</span>
 {/if}
 
@@ -92,6 +114,7 @@
 		width: var(--r);
 		user-select: none;
 		cursor: pointer;
+		display: inline-block;
 	}
 	.disabled {
 		opacity: 0.25;

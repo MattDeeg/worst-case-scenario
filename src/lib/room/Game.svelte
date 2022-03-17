@@ -12,17 +12,18 @@
 </script>
 
 <UserList />
-{#if $round}
-	{#key $round.id}
-		{#if $round.decision}
-			<DecisionReveal />
-		{:else if userID !== $round.victim || $round.cards?.[0]}
-			<Predicaments />
-		{/if}
-		{#if userID === $round.victim}
-			<VictimBar />
-		{:else}
-			<PlayerBar />
-		{/if}
-	{/key}
+{#if userID === $round.victim}
+	{#if $round.decision}
+		<DecisionReveal />
+	{:else if $round.cards?.[0]}
+		<Predicaments />
+	{/if}
+	<VictimBar />
+{:else}
+	{#if $round.decision}
+		<DecisionReveal />
+	{:else}
+		<Predicaments />
+	{/if}
+	<PlayerBar />
 {/if}

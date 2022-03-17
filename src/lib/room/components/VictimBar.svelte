@@ -19,14 +19,14 @@
 	const redrawCards = async () => {
 		previewCards = await api.getHand().then((r) => r.data);
 	};
-	const reveal = (index: number) => api.revealDecision({ index });
+	const reveal = (token: number) => api.revealDecision({ token: asTokenValue(token) });
 	onMount(() => {
 		if (!cardsSelected) {
 			redrawCards();
 		}
 	});
 	$: orderedCards = $tokens.map((cardIndex, i) => ({
-		originalIndex: i,
+		token: i,
 		text: $cards[cardIndex]
 	}));
 </script>
@@ -44,7 +44,7 @@
 	</div>
 {:else if allRevealed}
 	<!-- All cards have been revealed -->
-	<div class="bottomBar">
+	<div class="bottomBar" data-me={userID} data-victim={$round.victim}>
 		<button type="button" on:click={api.nextRound}>Next Victim</button>
 	</div>
 {:else if $allPlayersReady}
@@ -52,16 +52,12 @@
 	<div class="bottomBar g3 column">
 		<h4 class="header">Reveal Your Picks</h4>
 		<div class="row g2 between">
-			{#each orderedCards as { text, originalIndex }, i (i)}
+			{#each orderedCards as { text, token }, i (i)}
 				<div class="column g1">
 					<Card {text} --ratio="0.35" flipped --token-radius="2em">
 						<Token value={asTokenValue(i)} color={$user.color} slot="token" />
 					</Card>
-					<button
-						class:revealed={revealed?.[i]}
-						on:click={() => reveal(originalIndex)}
-						type="button"
-					>
+					<button class:revealed={revealed?.[i]} on:click={() => reveal(token)} type="button">
 						Reveal Card {i + 1}
 					</button>
 				</div>

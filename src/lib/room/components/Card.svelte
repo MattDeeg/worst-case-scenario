@@ -69,8 +69,14 @@
 		top: 0;
 		right: 0;
 		z-index: 1;
-		transform: translate(50%, calc(var(--radius) * -0.5));
-		height: calc(35rem * var(--r));
+		transform: translate(50%, -50%);
+		height: var(--radius);
+		width: var(--radius);
+	}
+	.token > :global(*) {
+		position: absolute;
+		top: 0;
+		right: 0;
 	}
 	.victim {
 		--radius: 5em;

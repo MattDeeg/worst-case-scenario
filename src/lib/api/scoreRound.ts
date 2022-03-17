@@ -11,9 +11,9 @@ const baseScore = (correct: number[], guesses: number[]) => {
 };
 
 const positionMatches = (correct: number[], guesses: number[], value: number) => {
-	const correctIndex = correct.findIndex((n) => n === value);
-	const guessIndex = guesses.findIndex((n) => n === value);
-	return correctIndex === guessIndex;
+	const correctCard = correct[value];
+	const guessCard = guesses[value];
+	return correctCard === guessCard;
 };
 
 // The 4 is more!
@@ -73,9 +73,7 @@ const scoreYourChips = (correct: number[], guesses: number[]) => {
 const scoreFunctions = [theFourIsMore, allIsBonus, badIsGood, scoreYourChips, tripleUp, doubleUp];
 
 export const getBonusType = (): number => {
-	const r = Math.floor(Math.random() * (scoreFunctions.length - 1));
-	console.log({ r });
-	return r;
+	return Math.floor(Math.random() * (scoreFunctions.length - 1));
 };
 
 export const scoreRound = (

@@ -4,10 +4,6 @@
 	import Card from './Card.svelte';
 
 	export let cards: CardType[];
-
-	const shuffle = () => {
-		cards = cards.map((c) => ({ ...c, id: `${c.id}1` }));
-	};
 </script>
 
 <div class="cards">

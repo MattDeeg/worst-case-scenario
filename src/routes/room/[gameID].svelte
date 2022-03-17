@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { page, session } from '$app/stores';
-	import { crossfade } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
 	import { api } from '$lib/room/apiCalls';
 	import { watchStore } from '$lib/utils';
 	import Lobby from '$lib/room/Lobby.svelte';
@@ -10,26 +8,13 @@
 	import { wrapDatabase } from '$lib/firebase/dbTypes/Accessor';
 	import { setRoomContext, setAnimationContext, type UserWithID } from '$lib/room/context';
 	import { derived } from 'svelte/store';
+	import { flip } from '$lib/transitions/flip';
 
 	const { userID } = $session;
 	const { gameID } = $page.params;
 
-	const [send, receive] = crossfade({
-		duration: (d) => Math.sqrt(d * 200),
-
-		fallback(node) {
-			const style = getComputedStyle(node);
-			const transform = style.transform === 'none' ? '' : style.transform;
-
-			return {
-				duration: 600,
-				easing: quintOut,
-				css: (t) => `
-					transform: ${transform} scale(${t});
-					opacity: ${t}
-				`
-			};
-		}
+	const [send, receive] = flip({
+		duration: (d) => Math.sqrt(d * 200)
 	});
 	setAnimationContext({ send, receive });
 
@@ -66,7 +51,9 @@
 	);
 	const readinessStore = watchStore(gameRef.ready);
 	const allReadyStore = derived([userStore, readinessStore], ([$users, $readiness]) => {
-		return Object.keys($users ?? {}).every((id) => $readiness?.[id] === true);
+		return Object.keys($users ?? {}).every(
+			(id) => $users?.[id].inactive || $readiness?.[id] === true
+		);
 	});
 
 	setRoomContext({

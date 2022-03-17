@@ -1,9 +1,21 @@
 <script lang="ts">
+	import victimImg from './victim.png';
 	import Spinner from './Spinner.svelte';
 	import { darkenHex } from '$lib/utils';
 	import { getRoomContext } from '$lib/room/context';
 
-	const { round, users, scores, readiness } = getRoomContext();
+	const { api, round, users, scores, readiness } = getRoomContext();
+
+	let victimIsInactive = false;
+	$: {
+		const victim = $round?.victim;
+		const user = ($users ?? []).find((user) => user.id === victim);
+		if (user.inactive) {
+			victimIsInactive = true;
+		} else if (victimIsInactive === true) {
+			victimIsInactive = false;
+		}
+	}
 </script>
 
 <div class="users">
@@ -13,13 +25,17 @@
 			class="user"
 			class:victim={$round?.victim === user.id}
 			class:ready={$readiness?.[user.id]}
+			class:inactive={user.inactive}
 			style="--user-color: {user.color}; --shadow-color: {darkenHex(user.color)}"
 		>
-			<img src="/static/victim.png" />
+			<img src={victimImg} alt="{user.name} is The Victim" />
 			<span class="name">{user.name}</span>
 			<span class="score">{$scores?.[user.id] ?? 0}</span>
 		</div>
 	{/each}
+	{#if victimIsInactive}
+		<button type="button" on:click={api.nextRound}>Skip Inactive Victim</button>
+	{/if}
 </div>
 
 <style lang="scss">
@@ -51,6 +67,9 @@
 				width: 0;
 			}
 
+			&.inactive {
+				opacity: 0.5;
+			}
 			&.victim {
 				img {
 					opacity: 1;

@@ -3,21 +3,20 @@
 	import Card from './Card.svelte';
 	import Token from './Token.svelte';
 	import { getRoomContext, type UserWithID } from '../context';
-	import { fly } from 'svelte/transition';
+	import { fly, type FlyParams } from 'svelte/transition';
 
-	function swoop(node, opts) {
+	function swoop(node: Element, opts: FlyParams) {
 		const anim = fly(node, { ...opts, opacity: 1 });
 		if (card === '') {
 			return { delay: 0, duration: 0 };
 		}
 		return {
 			...anim,
-			css: (t, u) => `z-index: 5; ${anim.css(t, u)}`
+			css: (t: number, u: number) => `z-index: 5; ${anim.css(t, u)}`
 		};
 	}
 
 	const { round, users } = getRoomContext();
-	let keyForTransition = 100000;
 
 	const getTokenProps = (token: DecisionToken, users: UserWithID[]) => {
 		if (!token) {
@@ -39,7 +38,7 @@
 {#if card !== ''}
 	<div class="decisionWrapper">
 		{#key card}
-			<div class="transition" out:swoop={{ y: -1000, duration: 1500 }}>
+			<div class="transition" out:swoop|local={{ y: -1000, duration: 1500 }}>
 				<Card text={card} flipped>
 					<Token {...victimToken} slot="victim" />
 					<div class="column flex-wrap g1" style="height: 100%">

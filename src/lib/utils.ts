@@ -44,7 +44,7 @@ export const watchStore = <T>(ref: RefOf<T>, defaultValue?: T): Readable<T> => {
 	return store;
 };
 
-export function darkenHex(H) {
+export function darkenHex(H: string) {
 	// Convert hex to RGB first
 	let r = 0;
 	let g = 0;

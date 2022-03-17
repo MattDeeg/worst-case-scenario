@@ -15,6 +15,7 @@ export interface Decision {
 export interface User {
 	name: string;
 	color: string;
+	inactive: boolean;
 }
 
 export interface Round {

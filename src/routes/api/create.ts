@@ -46,7 +46,8 @@ export const post: RequestHandler = async (event) => {
 				users: {
 					[userID]: {
 						color: getColorFor(0),
-						name
+						name,
+						inactive: false
 					}
 				}
 			},
