@@ -24,7 +24,8 @@
 		navigator.sendBeacon(`/api/${gameID}/reactivate`);
 	};
 	const deactivate = () => {
-		navigator.sendBeacon(`/api/${gameID}/deactivate`);
+		// TODO temporarily deactivated until investigation
+		// navigator.sendBeacon(`/api/${gameID}/deactivate`);
 	};
 	const visibilityWrapper = () => {
 		if (document.visibilityState === 'hidden') {
